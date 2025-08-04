@@ -1,0 +1,97 @@
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "HoldSRender"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 1000
+pcall(function()
+	gui.Parent = game:GetService("CoreGui")
+end)
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(0, 80, 0, 40)
+button.Position = UDim2.new(0, 100, 0, 100)
+button.BackgroundColor3 = Color3.fromRGB(0, 0, 100)
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Text = "S"
+button.Font = Enum.Font.SourceSansBold
+button.TextSize = 30
+button.Parent = gui
+button.Active = true
+button.Draggable = false
+
+local dragging = false
+local dragStart, startPos
+
+button.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = button.Position
+	end
+end)
+
+button.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		button.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+local holding = false
+local connection
+
+local function startHoldS()
+	if holding then return end
+	holding = true
+	UserInputService.MouseIconEnabled = false -- cursor ilang
+
+	connection = RunService.RenderStepped:Connect(function()
+		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.S, false, game)
+	end)
+end
+
+local function stopHoldS()
+	if not holding then return end
+	holding = false
+	UserInputService.MouseIconEnabled = true 
+
+	VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.S, false, game)
+	if connection then
+		connection:Disconnect()
+		connection = nil
+	end
+end
+
+button.MouseButton1Click:Connect(function()
+	if holding then
+		stopHoldS()
+	else
+		startHoldS()
+	end
+end)
+
+player.CharacterRemoving:Connect(stopHoldS)
+player.CharacterAdded:Connect(function()
+	pcall(function()
+		gui.Parent = game:GetService("CoreGui")
+	end)
+	stopHoldS()
+end)
+
+game:BindToClose(stopHoldS)
