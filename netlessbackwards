@@ -24,19 +24,17 @@ button.Font = Enum.Font.SourceSansBold
 button.TextSize = 30
 button.Parent = gui
 button.Active = true
-local dragging, dragStart, startPos, dragInput = false
+button.Draggable = false
+
+local dragging = false
+local dragStart, startPos
 
 button.InputBegan:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 then
-dragging = true
-dragStart = input.Position
-startPos = button.Position
-input.Changed:Connect(function()
-if input.UserInputState == Enum.UserInputState.End then
-dragging = false
-end
-end)
-end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = button.Position
+	end
 end)
 
 button.InputEnded:Connect(function(input)
